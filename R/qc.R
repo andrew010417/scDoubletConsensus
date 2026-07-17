@@ -13,6 +13,9 @@
 #'   `percent.mt` columns in `meta.data`.
 #' @export
 compute_qc_metrics <- function(seurat_obj, mt_pattern = "^MT-") {
+  if (!requireNamespace("Seurat", quietly = TRUE)) {
+    stop("Package 'Seurat' is required for compute_qc_metrics().")
+  }
   if (!methods::is(seurat_obj, "Seurat")) {
     stop("`seurat_obj` must be a Seurat object.")
   }
@@ -37,6 +40,9 @@ compute_qc_metrics <- function(seurat_obj, mt_pattern = "^MT-") {
 #'   and `counts_vs_mt`.
 #' @export
 plot_qc_metrics <- function(seurat_obj) {
+  if (!requireNamespace("Seurat", quietly = TRUE)) {
+    stop("Package 'Seurat' is required for plot_qc_metrics().")
+  }
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required for plot_qc_metrics().")
   }
@@ -88,6 +94,9 @@ filter_cells <- function(seurat_obj,
                           max_genes = Inf,
                           min_counts = 500,
                           max_mt_percent = 10) {
+  if (!requireNamespace("Seurat", quietly = TRUE)) {
+    stop("Package 'Seurat' is required for filter_cells().")
+  }
   if (!methods::is(seurat_obj, "Seurat")) {
     stop("`seurat_obj` must be a Seurat object.")
   }

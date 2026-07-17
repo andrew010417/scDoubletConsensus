@@ -18,11 +18,11 @@ RoxygenNote: 7.3.1
 Depends:
     R (>= 4.1)
 Imports:
-    Seurat (>= 4.0.0),
-    SingleCellExperiment,
     methods,
     stats
 Suggests:
+    Seurat (>= 4.0.0),
+    SingleCellExperiment,
     DoubletFinder,
     scDblFinder,
     ggplot2,
