@@ -108,24 +108,65 @@ consensus_rank <- function(score_df,
 #'
 #' @param consensus_df Output of [consensus_rank()].
 #' @param top_n If set, the `top_n` cells by `consensus_rank` are called
-#'   doublets. Takes precedence over `quantile`.
+#'   doublets. Takes precedence over `quantile`. Only used when
+#'   `cutoff_method = "legacy"`.
 #' @param quantile Quantile of `consensus_score` (0-1) above which a cell is
-#'   called a doublet. Ignored if `top_n` is set. Default `0.9`.
+#'   called a doublet. Ignored if `top_n` is set. Default `0.9`. Only used
+#'   when `cutoff_method = "legacy"`.
+#' @param cutoff_method `"legacy"` (default) uses `top_n`/`quantile` as
+#'   above. `"intersection_median"` sets the threshold to the median
+#'   `consensus_score` among cells called doublets by every column in
+#'   `call_cols` -- i.e. cells at least as doublet-like as a "typical"
+#'   intersection hit are kept, recovering ones the strict intersection
+#'   missed. `"multiplet_rate"` calls the top
+#'   `round(multiplet_rate * nrow(consensus_df))` cells by `consensus_rank`,
+#'   where `multiplet_rate` defaults to [estimate_multiplet_rate()] applied
+#'   to the cell count.
+#' @param call_cols Character vector of per-tool call columns (e.g.
+#'   `c("doublet_finder_call", "scdblfinder_call")`). Required when
+#'   `cutoff_method = "intersection_median"`.
+#' @param multiplet_rate Expected doublet rate in `[0, 1]`. Required only to
+#'   override the automatic estimate when `cutoff_method = "multiplet_rate"`.
 #'
 #' @return `consensus_df` with an added `consensus_call` column
 #'   (`"doublet"`/`"singlet"`).
 #' @export
-classify_consensus_doublets <- function(consensus_df, top_n = NULL, quantile = 0.9) {
+classify_consensus_doublets <- function(consensus_df,
+                                         top_n = NULL,
+                                         quantile = 0.9,
+                                         cutoff_method = c("legacy", "intersection_median", "multiplet_rate"),
+                                         call_cols = NULL,
+                                         multiplet_rate = NULL) {
+  cutoff_method <- match.arg(cutoff_method)
   if (!"consensus_score" %in% colnames(consensus_df) ||
         !"consensus_rank" %in% colnames(consensus_df)) {
     stop("`consensus_df` must come from consensus_rank().")
   }
 
-  if (!is.null(top_n)) {
-    consensus_df$consensus_call <- ifelse(consensus_df$consensus_rank <= top_n, "doublet", "singlet")
-  } else {
-    threshold <- stats::quantile(consensus_df$consensus_score, probs = quantile, na.rm = TRUE)
+  if (cutoff_method == "legacy") {
+    if (!is.null(top_n)) {
+      consensus_df$consensus_call <- ifelse(consensus_df$consensus_rank <= top_n, "doublet", "singlet")
+    } else {
+      threshold <- stats::quantile(consensus_df$consensus_score, probs = quantile, na.rm = TRUE)
+      consensus_df$consensus_call <- ifelse(consensus_df$consensus_score >= threshold, "doublet", "singlet")
+    }
+  } else if (cutoff_method == "intersection_median") {
+    if (is.null(call_cols) || length(call_cols) < 2) {
+      stop("`call_cols` (>= 2 columns) is required for cutoff_method = 'intersection_median'.")
+    }
+    is_doublet <- function(x) tolower(as.character(x)) %in% c("doublet", "true", "1")
+    intersection_call <- Reduce(`&`, lapply(call_cols, function(col) is_doublet(consensus_df[[col]])))
+    if (!any(intersection_call)) {
+      stop("No cells are in the intersection of `call_cols`; cannot compute a median cutoff.")
+    }
+    threshold <- stats::median(consensus_df$consensus_score[intersection_call], na.rm = TRUE)
     consensus_df$consensus_call <- ifelse(consensus_df$consensus_score >= threshold, "doublet", "singlet")
+  } else {
+    if (is.null(multiplet_rate)) {
+      multiplet_rate <- estimate_multiplet_rate(nrow(consensus_df))
+    }
+    n <- round(multiplet_rate * nrow(consensus_df))
+    consensus_df$consensus_call <- ifelse(consensus_df$consensus_rank <= n, "doublet", "singlet")
   }
   consensus_df
 }

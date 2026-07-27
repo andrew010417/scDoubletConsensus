@@ -72,6 +72,57 @@ test_that("classify_consensus_doublets top_n labels exactly top_n cells", {
   )
 })
 
+test_that("classify_consensus_doublets intersection_median uses the intersection's median score as threshold", {
+  consensus_df <- data.frame(
+    cell = paste0("cell", 1:6),
+    consensus_score = c(10, 8, 6, 4, 2, 0),
+    consensus_rank = 1:6,
+    doublet_finder_call = c("Doublet", "Doublet", "Doublet", "Singlet", "Singlet", "Singlet"),
+    scdblfinder_call = c("doublet", "singlet", "doublet", "doublet", "singlet", "singlet")
+  )
+  # intersection (both tools agree) = cell1 (score 10), cell3 (score 6) -> median = 8
+  result <- classify_consensus_doublets(
+    consensus_df,
+    cutoff_method = "intersection_median",
+    call_cols = c("doublet_finder_call", "scdblfinder_call")
+  )
+  expect_setequal(result$cell[result$consensus_call == "doublet"], c("cell1", "cell2"))
+})
+
+test_that("classify_consensus_doublets intersection_median errors without call_cols", {
+  consensus_df <- data.frame(
+    cell = paste0("cell", 1:3),
+    consensus_score = c(3, 2, 1),
+    consensus_rank = 1:3
+  )
+  expect_error(classify_consensus_doublets(consensus_df, cutoff_method = "intersection_median"))
+})
+
+test_that("classify_consensus_doublets multiplet_rate calls round(rate * n) top cells", {
+  consensus_df <- data.frame(
+    cell = paste0("cell", 1:10),
+    consensus_score = seq(10, 1, by = -1),
+    consensus_rank = 1:10
+  )
+  result <- classify_consensus_doublets(
+    consensus_df,
+    cutoff_method = "multiplet_rate",
+    multiplet_rate = 0.3
+  )
+  expect_equal(sum(result$consensus_call == "doublet"), 3)
+  expect_setequal(result$cell[result$consensus_call == "doublet"], c("cell1", "cell2", "cell3"))
+})
+
+test_that("classify_consensus_doublets multiplet_rate defaults to estimate_multiplet_rate", {
+  consensus_df <- data.frame(
+    cell = paste0("cell", 1:6000),
+    consensus_score = seq(6000, 1, by = -1),
+    consensus_rank = 1:6000
+  )
+  result <- classify_consensus_doublets(consensus_df, cutoff_method = "multiplet_rate")
+  expect_equal(sum(result$consensus_call == "doublet"), round(estimate_multiplet_rate(6000) * 6000))
+})
+
 test_that("compare_to_intersection recovers cells missed by strict intersection", {
   # This encodes the README's core motivating claim: a cell can score very
   # high on the tools' underlying scores yet be missed by binary-call

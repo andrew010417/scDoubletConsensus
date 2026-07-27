@@ -6,9 +6,12 @@
 #' `RunPCA()` already run).
 #'
 #' @param seurat_obj A processed `Seurat` object.
-#' @param PCs Integer vector of principal components to use.
+#' @param PCs Integer vector of principal components to use, or `"auto"` to
+#'   pick them via [choose_pcs()]'s elbow heuristic (requires `RunPCA()` to
+#'   have already been run on `seurat_obj`).
 #' @param expected_doublet_rate Expected doublet rate (e.g. `0.075` for the
-#'   standard 10x ~7.5% at ~10k cells loaded).
+#'   standard 10x ~7.5% at ~10k cells loaded), or `"auto"` to derive it from
+#'   cell count via [estimate_multiplet_rate()].
 #' @param sct Whether the object was normalized with `SCTransform()`.
 #' @param seed Random seed passed through for reproducibility.
 #'
@@ -25,6 +28,11 @@ run_doubletfinder <- function(seurat_obj,
       "Package 'DoubletFinder' is required. Install from GitHub via:\n",
       "  remotes::install_github('chris-mcginnis-ucsf/DoubletFinder')"
     )
+  }
+
+  if (identical(PCs, "auto")) PCs <- choose_pcs(seurat_obj)
+  if (identical(expected_doublet_rate, "auto")) {
+    expected_doublet_rate <- estimate_multiplet_rate(ncol(seurat_obj))
   }
 
   set.seed(seed)

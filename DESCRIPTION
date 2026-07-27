@@ -1,6 +1,6 @@
 Package: scDoubletConsensus
 Title: Consensus Doublet Detection for Single-Cell RNA-Seq Data
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: person("Andrew", "Choi Lab", email = "p010417pjh@gmail.com", role = c("aut", "cre"))
 Description: Quality control and doublet-detection toolkit for scRNA-seq data.
     Instead of taking the intersection of calls from multiple doublet
