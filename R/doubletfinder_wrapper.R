@@ -54,7 +54,7 @@ run_doubletfinder <- function(seurat_obj,
     pN = 0.25,
     pK = optimal_pK,
     nExp = n_exp_adj,
-    reuse.pANN = FALSE,
+    reuse.pANN = NULL,
     sct = sct
   )
 

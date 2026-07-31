@@ -30,7 +30,10 @@ simulate_doublet_benchmark <- function(n_cells = 3000, doublet_rate = 0.1, seed 
   }
 
   set.seed(seed)
-  sce <- scDblFinder::mockDoubletSCE(ncells = n_cells, dbl.rate = doublet_rate)
+  # mockDoubletSCE()'s `ncells` is a per-cluster size vector (length >= 2),
+  # not a total cell count, so split n_cells across two mock clusters.
+  cluster_sizes <- c(ceiling(n_cells / 2), floor(n_cells / 2))
+  sce <- scDblFinder::mockDoubletSCE(ncells = cluster_sizes, dbl.rate = doublet_rate)
 
   counts <- SingleCellExperiment::counts(sce)
   colnames(counts) <- paste0("cell", seq_len(ncol(counts)))
