@@ -29,6 +29,10 @@ remotes::install_github("chris-mcginnis-ucsf/DoubletFinder")
 remotes::install_github("andrew010417/scDoubletConsensus")
 ```
 
+Windows에서는 `scDblFinder`의 의존 패키지인 `bluster`가 아직 Windows용 바이너리로 배포되지 않은 R
+버전이 있을 수 있습니다. 이 경우 소스에서 컴파일해야 하므로 [Rtools](https://cran.r-project.org/bin/windows/Rtools/)를
+먼저 설치해야 `BiocManager::install("scDblFinder")`가 성공합니다.
+
 ## 사용법
 
 ```r
