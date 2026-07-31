@@ -103,6 +103,10 @@ choose_pcs <- function(x, cumulative_cutoff = 90, variation_cutoff = 5, reductio
 
   n_pcs <- min(co1, co2, na.rm = TRUE)
   if (!is.finite(n_pcs)) n_pcs <- length(stdev)
+  # A single PC breaks downstream matrix ops that expect >= 2 dimensions
+  # (e.g. diag() on a length-1 numeric builds an identity matrix, not a
+  # 1x1 diagonal one), so never return fewer than 2.
+  n_pcs <- max(n_pcs, 2)
 
   seq_len(n_pcs)
 }

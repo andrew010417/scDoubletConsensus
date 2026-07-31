@@ -33,6 +33,15 @@ test_that("choose_pcs requires at least two PCs", {
   expect_error(choose_pcs(c(1)))
 })
 
+test_that("choose_pcs never returns fewer than two PCs even when variance is all in PC1", {
+  # a single dominant PC (e.g. pure-noise data) would otherwise pick n_pcs = 1,
+  # which breaks downstream code (e.g. diag() on a length-1 numeric builds an
+  # identity matrix instead of a 1x1 diagonal one).
+  stdev <- c(100, 0.1, 0.1, 0.1, 0.1)
+  pcs <- choose_pcs(stdev)
+  expect_true(length(pcs) >= 2)
+})
+
 test_that("choose_pcs rejects non-numeric, non-Seurat input", {
   expect_error(choose_pcs("not a seurat object"))
 })
